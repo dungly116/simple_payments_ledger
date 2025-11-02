@@ -1,4 +1,4 @@
-from .account_service import AccountService
-from .transfer_service import TransferService
+from .account import AccountService
+from .transfer import TransferService
 
 __all__ = ["AccountService", "TransferService"]

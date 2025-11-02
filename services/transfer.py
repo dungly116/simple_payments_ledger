@@ -50,12 +50,15 @@ class TransferService:
             Completed transaction record
 
         Raises:
-            InvalidAmountException: If amount <= 0
+            InvalidAmountException: If amount <= 0 or transferring to same account
             AccountNotFoundException: If either account doesn't exist
             InsufficientFundsException: If source account has insufficient balance
         """
         if amount <= 0:
             raise InvalidAmountException("Amount must be positive")
+
+        if from_account_id == to_account_id:
+            raise InvalidAmountException("Cannot transfer to same account")
 
         from_account = self.account_repository.find_by_id(from_account_id)
         if from_account is None:

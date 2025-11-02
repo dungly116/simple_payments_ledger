@@ -86,12 +86,12 @@ class TestTransferService:
             transfer_service.transfer(acc_a.id, "nonexistent", Decimal("100"))
 
     def test_transfer_to_self(self, account_service, transfer_service):
-        """Test transfer to same account (valid operation)."""
+        """Test transfer to same account should be rejected."""
         acc_a = account_service.create_account(Decimal("1000"))
 
-        transaction = transfer_service.transfer(acc_a.id, acc_a.id, Decimal("100"))
+        with pytest.raises(InvalidAmountException):
+            transfer_service.transfer(acc_a.id, acc_a.id, Decimal("100"))
 
-        assert transaction.status == TransactionStatus.COMPLETED
         assert acc_a.balance == Decimal("1000")
 
     def test_transfer_exact_balance(self, account_service, transfer_service):
