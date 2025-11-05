@@ -30,7 +30,7 @@ class ConcurrencyTest {
     }
 
     @Test
-    void testConcurrentTransfersFromSameAccount() throws InterruptedException {
+    void testConcurrentTransfersFromSameAccount() throws InterruptedException, ExecutionException {
         Account alice = accountRepository.create(new BigDecimal("1000.00"));
         Account bob = accountRepository.create(new BigDecimal("0.00"));
 
@@ -73,7 +73,7 @@ class ConcurrencyTest {
     }
 
     @Test
-    void testDeadlockPrevention() throws InterruptedException, ExecutionException {
+    void testDeadlockPrevention() throws InterruptedException, ExecutionException, TimeoutException {
         Account alice = accountRepository.create(new BigDecimal("1000.00"));
         Account bob = accountRepository.create(new BigDecimal("1000.00"));
 
@@ -168,29 +168,55 @@ class ConcurrencyTest {
         Account david = accountRepository.create(new BigDecimal("1000.00"));
 
         ExecutorService executor = Executors.newFixedThreadPool(2);
-        CountDownLatch latch = new CountDownLatch(2);
+        CountDownLatch startLatch = new CountDownLatch(2);
+        CountDownLatch finishLatch = new CountDownLatch(2);
 
         long[] startTime = new long[2];
         long[] endTime = new long[2];
 
         executor.submit(() -> {
-            startTime[0] = System.nanoTime();
-            transferService.transfer(alice.getId(), bob.getId(), new BigDecimal("100.00"));
-            endTime[0] = System.nanoTime();
-            latch.countDown();
+            try {
+                startTime[0] = System.nanoTime();
+                startLatch.countDown();
+                startLatch.await();
+
+                for (int i = 0; i < 10; i++) {
+                    transferService.transfer(alice.getId(), bob.getId(), new BigDecimal("10.00"));
+                }
+
+                endTime[0] = System.nanoTime();
+                finishLatch.countDown();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         });
 
         executor.submit(() -> {
-            startTime[1] = System.nanoTime();
-            transferService.transfer(charlie.getId(), david.getId(), new BigDecimal("100.00"));
-            endTime[1] = System.nanoTime();
-            latch.countDown();
+            try {
+                startTime[1] = System.nanoTime();
+                startLatch.countDown();
+                startLatch.await();
+
+                for (int i = 0; i < 10; i++) {
+                    transferService.transfer(charlie.getId(), david.getId(), new BigDecimal("10.00"));
+                }
+
+                endTime[1] = System.nanoTime();
+                finishLatch.countDown();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         });
 
-        latch.await(5, TimeUnit.SECONDS);
+        assertTrue(finishLatch.await(5, TimeUnit.SECONDS), "Transfers should complete within timeout");
         executor.shutdown();
 
         long overlap = Math.min(endTime[0], endTime[1]) - Math.max(startTime[0], startTime[1]);
         assertTrue(overlap > 0, "Transfers on different accounts should execute in parallel");
+
+        assertEquals(new BigDecimal("900.00"), alice.getBalance());
+        assertEquals(new BigDecimal("1100.00"), bob.getBalance());
+        assertEquals(new BigDecimal("900.00"), charlie.getBalance());
+        assertEquals(new BigDecimal("1100.00"), david.getBalance());
     }
 }

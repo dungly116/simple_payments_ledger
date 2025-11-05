@@ -1,4 +1,4 @@
-package com.payments.ledger.api.dto;
+package com.payments.ledger.dto;
 
 import com.payments.ledger.models.Account;
 

@@ -61,6 +61,13 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
+        <!-- OpenAPI/Swagger Documentation -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-ui</artifactId>
+            <version>1.7.0</version>
+        </dependency>
+
         <!-- Spring Boot Starter Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

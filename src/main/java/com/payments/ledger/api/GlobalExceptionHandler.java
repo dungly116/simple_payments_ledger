@@ -1,6 +1,6 @@
 package com.payments.ledger.api;
 
-import com.payments.ledger.api.dto.ErrorResponse;
+import com.payments.ledger.dto.ErrorResponse;
 import com.payments.ledger.exceptions.AccountNotFoundException;
 import com.payments.ledger.exceptions.InsufficientFundsException;
 import com.payments.ledger.exceptions.InvalidAmountException;
